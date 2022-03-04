@@ -53,7 +53,7 @@ setup(
             'argument = topic_service_action_rclpy_example.arithmetic.argument:main',
             'operator = topic_service_action_rclpy_example.arithmetic.operator:main',
             'calculator = topic_service_action_rclpy_example.calculator.main:main',
-            # 'checker = topic_service_action_rclpy_example.checker.main:main',
+            'checker = topic_service_action_rclpy_example.checker.main:main',
         ],
     },
 )

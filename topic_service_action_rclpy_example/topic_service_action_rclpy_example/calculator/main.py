@@ -14,26 +14,26 @@
 
 import rclpy
 from topic_service_action_rclpy_example.calculator.calculator import Calculator
-# from rclpy.executors import MultiThreadedExecutor
+from rclpy.executors import MultiThreadedExecutor
 
 def main(args=None):
   rclpy.init(args=args)
   try:
     calculator = Calculator()
     #  excutor
-    # executor = MultiThreadedExecutor(num_threads=4)
-    # executor.add_node(calculator)
+    executor = MultiThreadedExecutor(num_threads=4)
+    executor.add_node(calculator)
     try:
-      rclpy.spin(calculator)
+      executor.spin()
     except KeyboardInterrupt:
       calculator.get_logger().info('Keyboard Interrupt (SIGNT)')
+    finally:
+        executor.shutdown()
+        calculator.arithmetic_action_server.destroy()
+        calculator.destroy_node()
   finally:
-    # executor.shutdown()
-    # calculator.arithmetic_action_server.destroy()
-
-    # calculator.destroy_node()
     rclpy.shutdown()
 
 if __name__ == '__main__':
-  main()
+    main()
 

@@ -15,12 +15,14 @@
 import time
 from msg_srv_action_interface_example.msg import ArithmeticArgument
 from msg_srv_action_interface_example.srv import ArithmeticOperator
+from msg_srv_action_interface_example.action import ArithmeticChecker
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy
 from rclpy.qos import QoSHistoryPolicy
 from rclpy.qos import QoSProfile
 from rclpy.qos import QoSReliabilityPolicy
+from rclpy.action import ActionServer
 
 class Calculator(Node):
 
@@ -54,6 +56,13 @@ class Calculator(Node):
             ArithmeticOperator,
             'arithmetic_operator',
             self.get_arithmetic_operator,
+            callback_group=self.callback_group)
+
+        self.arithmetic_action_server = ActionServer(
+            self,
+            ArithmeticChecker,
+            'arithmetic_checker',
+            self.execute_checker,
             callback_group=self.callback_group)
 
     def get_arithmetic_argument(self, msg):
@@ -98,4 +107,23 @@ class Calculator(Node):
                 'Please make sure arithmetic operator(plus, minus, multiply, division).')
             self.argument_result = 0.0
         return self.argument_result
+
+    def execute_checker(self, goal_handle):
+        self.get_logger().info('Execute arithmetic_checker_action!')
+        feedback_msg = ArithmeticChecker.Feedback()
+        feedback_msg.formula = []
+        total_sum = 0.0
+        goal_sum = goal_handle.request.goal_sum
+        while total_sum < goal_sum:
+            total_sum += self.argument_result
+            feedback_msg.formula.append(self.argument_formula)
+            self.get_logger().info(f'Feedback : {feedback_msg.formula}')
+            goal_handle.publish_feedback(feedback_msg)
+            time.sleep(1)
+        goal_handle.succeed()
+        result = ArithmeticChecker.Result()
+        result.all_formula = feedback_msg.formula
+        result.total_sum = total_sum
+        return result
+
 
