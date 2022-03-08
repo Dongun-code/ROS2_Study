@@ -6,17 +6,15 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rcutils/cmdline_parser.h"
 
-#include "calculator/calculator.hpp"
-
+#include "checker/checker.hpp"
 
 void print_help()
 {
-  printf("For ROS 2 topic subscriber, service server, action server rclcpp examples:\n");
-  printf("calculator [-h]\n");
+  printf("For Node node:\n");
+  printf("node_name [-h]\n");
   printf("Options:\n");
   printf("\t-h Help           : Print this help function.\n");
 }
-
 
 int main(int argc, char * argv[])
 {
@@ -27,11 +25,17 @@ int main(int argc, char * argv[])
 
   rclcpp::init(argc, argv);
 
-  auto calculator = std::make_shared<Calculator>();
+  float goal_total_sum = 50.0;
+  char * cli_option = rcutils_cli_get_option(argv, argv+argc, "-g");
+  if (nullptr != cli_option) {
+    goal_total_sum = std::stof(cli_option);
+  }
+  printf("goal_total_sum : %2.f\n", goal_total_sum);
 
-  rclcpp::spin(calculator);
-
+  auto checker = std::make_shared<Checker>(goal_total_sum);
+  rclcpp::spin(checker);
   rclcpp::shutdown();
 
   return 0;
+
 }
