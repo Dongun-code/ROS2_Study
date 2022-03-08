@@ -28,6 +28,7 @@ public:
 private:
   rclcpp::Subscription<ArithmeticArgument>::SharedPtr arithmetic_argument_subscriber_;
   rclcpp::Service<ArithmeticOperator>::SharedPtr arithmetic_argument_server_;
+
   float argument_a_;
   float argument_b_;
 

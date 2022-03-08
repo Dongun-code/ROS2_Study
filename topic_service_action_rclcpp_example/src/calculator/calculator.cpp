@@ -25,10 +25,18 @@ Calculator::Calculator(const rclcpp::NodeOptions & node_options)
 : Node("calculator", node_options),
   argument_a_(0.0),
   argument_b_(0.0),
-  argument_operator_(0.0),
-  argument_result_(0.0)
+  argument_operator_(0),
+  argument_result_(0.0),
+  argument_formula_("")
 {
   RCLCPP_INFO(this->get_logger(), "Run calculator");
+
+
+  operator_.reserve(4);
+  operator_.push_back("+");
+  operator_.push_back("-");
+  operator_.push_back("*");
+  operator_.push_back("/");
 
   this->declare_parameter("qos_depth", 10);
   int8_t qos_depth = 0;
@@ -79,35 +87,38 @@ Calculator::Calculator(const rclcpp::NodeOptions & node_options)
   arithmetic_argument_server_ =
     create_service<ArithmeticOperator>("arithmetic_operator", get_arithmetic_operator);
 
+
 }
 
 Calculator::~Calculator() { }
 
 float Calculator::calculate_given_formula(
-    const float & a,
-    const float & b,
-    const int8_t & operators)
-  {
-    float argument_result = 0.0;
+  const float & a,
+  const float & b,
+  const int8_t & operators)
+{
+  float argument_result = 0.0;
+  ArithmeticOperator::Request arithmetic_operator;
 
-    if (operators == arithmetic_operator.PLUS) {
-      argument_result = a + b;
-    } else if (operators == arithmetic_operator.MINUS) {
-      argument_result = a - b;
-    } else if (operators == arithmetic_operator.MULTIPLY) {
-      argument_result = a * b;
-    } else if (operators == arithmetic_operator.DIVISION) {
-      argument_result = a / b;
-      if (b == 0.0) {
-        RCLCPP_ERROR(this->get_logger(), "ZeroDivisionError!");
-        argument_result = 0.0;
-        return argument_result;
-      } else {
-        RCLCPP_ERROR(
-          this->get_logger(),
-          "Please make sure arithmetic operator(plus, minus. nmultiply, division).");
-      }
+  if (operators == arithmetic_operator.PLUS) {
+    argument_result = a + b;
+  } else if (operators == arithmetic_operator.MINUS) {
+    argument_result = a - b;
+  } else if (operators == arithmetic_operator.MULTIPLY) {
+    argument_result = a * b;
+  } else if (operators == arithmetic_operator.DIVISION) {
+    argument_result = a / b;
+    if (b == 0.0) {
+      RCLCPP_ERROR(this->get_logger(), "ZeroDivisionError!");
+      argument_result = 0.0;
+      return argument_result;
     }
-
-    return argument_result;
+  } else {
+    RCLCPP_ERROR(
+      this->get_logger(),
+      "Please make sure arithmetic operator(plus, minus, multiply, division).");
+    argument_result = 0.0;
   }
+
+  return argument_result;
+}
