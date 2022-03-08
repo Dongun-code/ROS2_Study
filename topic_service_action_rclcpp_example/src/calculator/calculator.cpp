@@ -87,7 +87,18 @@ Calculator::Calculator(const rclcpp::NodeOptions & node_options)
   arithmetic_argument_server_ =
     create_service<ArithmeticOperator>("arithmetic_operator", get_arithmetic_operator);
 
+  using namespace std::placeholders;
 
+  arithmetic_action_server_ = rclcpp_action::create_server<ArithmeticChecker>(
+    this->get_node_base_interface(),
+    this->get_node_clock_interface(),
+    this->get_node_logging_interface(),
+    this->get_node_waitables_interface(),
+    "arithmetic_checker",
+    std::bind(&Calculator::handle_goal, this, _1, _2),
+    std::bind(&Calculator::handle_cancel, this, _1),
+    std::bind(&Calculator::execute_checker, this, _1)
+  );
 }
 
 Calculator::~Calculator() { }
@@ -121,4 +132,52 @@ float Calculator::calculate_given_formula(
   }
 
   return argument_result;
+}
+
+rclcpp_action::GoalResponse Calculator::handle_goal(
+  const rclcpp_action::GoalUUID & uuid,
+  std::shared_ptr<const ArithmeticChecker::Goal> goal)
+{
+  (void)uuid;
+  (void)goal;
+  return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
+}
+
+rclcpp_action::CancelResponse Calculator::handle_cancel(
+  const std::shared_ptr<GoalHandleArithmeticChecker> goal_handle)
+{
+  RCLCPP_INFO(this->get_logger(), "Received request to cancel goal");
+  (void)goal_handle;
+  return rclcpp_action::CancelResponse::ACCEPT;
+}
+
+void Calculator::execute_checker(const std::shared_ptr<GoalHandleArithmeticChecker> goal_handle)
+{
+  RCLCPP_INFO(this->get_logger(), "Excute arithmetic_checker action!");
+  rclcpp::Rate loop_rate(1);
+
+  auto feedback_msg = std::make_shared<ArithmeticChecker::Feedback>();
+  float total_sum = 0.0;
+  float goal_sum = goal_handle->get_goal()->goal_sum;
+
+  while ((total_sum < goal_sum) && rclcpp::ok()) {
+    total_sum += argument_result_;
+    feedback_msg->formula.push_back(argument_formula_);
+    if (argument_formula_.empty()) {
+      RCLCPP_WARN(this->get_logger(), "Please check your formula");
+      break;
+    }
+    RCLCPP_INFO(this->get_logger(), "Feedback: ");
+    for (const auto & formula : feedback_msg->formula) {
+      RCLCPP_INFO(this->get_logger(), "\t%s", formula.c_str());
+  }
+  goal_handle->publish_feedback(feedback_msg);
+  loop_rate.sleep();
+}
+if (rclcpp::ok()) {
+  auto result = std::make_shared<ArithmeticChecker::Result>();
+  result->all_formula = feedback_msg->formula;
+  result->total_sum = total_sum;
+  goal_handle->succeed(result);
+}
 }
